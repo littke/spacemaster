@@ -3,6 +3,9 @@ import Phaser from "phaser";
 import playerImg from "./assets/player.png";
 import bulletImg from "./assets/bullet.png";
 import alienImg from "./assets/alien.png";
+import spaceBg from "./assets/space.png";
+import explosionSoundFile from "./assets/sounds/explosion.wav";
+import shootSoundFile from "./assets/sounds/shoot.wav";
 
 const config = {
   type: Phaser.AUTO,
@@ -27,14 +30,24 @@ let player;
 let cursors;
 let bullets;
 let aliens;
+let bg;
+let explosionSound;
+let shootSound;
 
 function preload() {
   this.load.image("player", playerImg);
   this.load.image("bullet", bulletImg);
   this.load.image("alien", alienImg);
+  this.load.image("space", spaceBg);
+  this.load.audio("explosionSound", explosionSoundFile);
+  this.load.audio("shootSound", shootSoundFile);
 }
 
 function create() {
+  // Create a stars background
+  bg = this.add.tileSprite(0, 0, 1400, 600, "space");
+  bg.setOrigin(0, 0);
+
   player = this.physics.add.sprite(
     config.width / 2,
     config.height - 50,
@@ -65,11 +78,17 @@ function create() {
     });
   });
 
+  // Add audio
+  explosionSound = this.sound.add("explosionSound");
+  shootSound = this.sound.add("shootSound");
+
+  // Handle overlaps
   this.physics.add.overlap(
     bullets,
     aliens,
     function (bullet, alien) {
       bullet.destroy();
+      explosionSound.play();
       alien.shootEvent.remove(); // stop the alien from shooting
       alien.destroy();
     },
@@ -99,7 +118,15 @@ function update() {
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-    let bullet = bullets.create(player.x, player.y - player.height, "bullet");
+    let bullet = bullets.create(
+      player.x,
+      player.y - player.height + 40,
+      "bullet"
+    );
     bullet.setVelocityY(-250);
+    shootSound.play();
   }
+
+  // Move the texture of the tile sprite upwards
+  bg.tilePositionY -= 1;
 }
