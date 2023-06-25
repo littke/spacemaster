@@ -3,6 +3,7 @@ import Phaser from "phaser";
 // Images
 import playerImg from "./assets/player.png";
 import bulletImg from "./assets/bullet.png";
+import playerBulletImg from "./assets/player-bullet.png";
 import alienImg from "./assets/alien.png";
 import spaceBg from "./assets/space.png";
 
@@ -39,6 +40,7 @@ let game = new Phaser.Game(config);
 let player;
 let cursors;
 let bullets;
+let playerBullets;
 let aliens;
 let bg;
 let explosionSound;
@@ -53,6 +55,7 @@ let gameSettings = {
 function preload() {
   this.load.image("player", playerImg);
   this.load.image("bullet", bulletImg);
+  this.load.image("playerBullet", playerBulletImg);
   this.load.image("alien", alienImg);
   this.load.image("space", spaceBg);
   this.load.audio("explosionSound", explosionSoundFile);
@@ -80,6 +83,7 @@ function create() {
 
   cursors = this.input.keyboard.createCursorKeys();
   bullets = this.physics.add.group();
+  playerBullets = this.physics.add.group();
   aliens = this.physics.add.group({
     key: "alien",
     repeat: 10,
@@ -133,11 +137,12 @@ function create() {
   });
 
   // Handle overlaps
+  // When a player bullet hits an alien
   this.physics.add.overlap(
-    bullets,
+    playerBullets,
     aliens,
-    function (bullet, alien) {
-      bullet.destroy();
+    function (playerBullet, alien) {
+      playerBullet.destroy();
       explosionSound.play();
       if (alien.nextShootEvent) {
         alien.nextShootEvent.remove();
@@ -181,12 +186,12 @@ function update() {
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-    let bullet = bullets.create(
+    let playerBullet = playerBullets.create(
       player.x,
       player.y - player.height + 40,
-      "bullet"
+      "playerBullet"
     );
-    bullet.setVelocityY(-gameSettings.playerSpeed);
+    playerBullet.setVelocityY(-gameSettings.playerSpeed);
     shootSound.play();
   }
 
