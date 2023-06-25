@@ -62,20 +62,23 @@ function create() {
   });
 
   aliens.getChildren().forEach((alien) => {
-    let delay = Phaser.Math.Between(200, 7000); // random delay between 200ms and 2000ms
-    alien.shootEvent = this.time.addEvent({
-      delay: delay,
-      callback: function () {
-        let bullet = bullets.create(
-          alien.x,
-          alien.y + alien.height - 30,
-          "bullet"
-        );
-        bullet.setVelocityY(250);
-      },
-      callbackScope: this,
-      loop: true,
-    });
+    let shoot = () => {
+      let bullet = bullets.create(
+        alien.x,
+        alien.y + alien.height - 30,
+        "bullet"
+      );
+      bullet.setVelocityY(300);
+
+      if (alien.active) {
+        let delay = Phaser.Math.Between(200, 3500); // random delay between 200ms and 2000ms
+        alien.nextShootEvent = this.time.delayedCall(delay, shoot, [], this);
+      }
+    };
+
+    // Add an initial delay before the first shot
+    let initialDelay = Phaser.Math.Between(0, 4000);
+    alien.nextShootEvent = this.time.delayedCall(initialDelay, shoot, [], this);
   });
 
   // Add audio
@@ -89,7 +92,9 @@ function create() {
     function (bullet, alien) {
       bullet.destroy();
       explosionSound.play();
-      alien.shootEvent.remove(); // stop the alien from shooting
+      if (alien.nextShootEvent) {
+        alien.nextShootEvent.remove();
+      }
       alien.destroy();
     },
     null,
@@ -110,9 +115,9 @@ function create() {
 
 function update() {
   if (cursors.left.isDown) {
-    player.setVelocityX(-300);
+    player.setVelocityX(-350);
   } else if (cursors.right.isDown) {
-    player.setVelocityX(300);
+    player.setVelocityX(350);
   } else {
     player.setVelocityX(0);
   }
