@@ -133,5 +133,5 @@ function update() {
   }
 
   // Move the texture of the tile sprite upwards
-  bg.tilePositionY -= 1;
+  bg.tilePositionY -= 1.1;
 }
