@@ -9,14 +9,18 @@ import spaceBg from "./assets/space.png";
 // Sounds
 import explosionSoundFile from "./assets/sounds/explosion.wav";
 import shootSoundFile from "./assets/sounds/shoot.wav";
+import impactScreamFile from "./assets/sounds/impact-scream.wav";
 
 // Music
 import music1File from "./assets/music/172_drum_n_bass_regal_heavy_electronic_drums.wav";
 
+// Sprites
+import player1ExplosionSprite from "./assets/player-1-explosion-sprite.png";
+
 const config = {
   type: Phaser.AUTO,
   width: 1500,
-  height: 800,
+  height: 900,
   physics: {
     default: "arcade",
     arcade: {
@@ -39,7 +43,12 @@ let aliens;
 let bg;
 let explosionSound;
 let shootSound;
+let playerDeadSound;
 let level1Music;
+
+let gameSettings = {
+  playerSpeed: 330,
+};
 
 function preload() {
   this.load.image("player", playerImg);
@@ -48,12 +57,18 @@ function preload() {
   this.load.image("space", spaceBg);
   this.load.audio("explosionSound", explosionSoundFile);
   this.load.audio("shootSound", shootSoundFile);
+  this.load.audio("impactScreamSound", impactScreamFile);
   this.load.audio("level1Music", music1File);
+  this.load.spritesheet("player-1-explosion", player1ExplosionSprite, {
+    frameWidth: 230,
+    frameHeight: 125,
+    endFrame: 9,
+  });
 }
 
 function create() {
   // Create a stars background
-  bg = this.add.tileSprite(0, 0, 1500, 800, "space");
+  bg = this.add.tileSprite(0, 0, 1500, 900, "space");
   bg.setOrigin(0, 0);
 
   player = this.physics.add.sprite(
@@ -81,28 +96,41 @@ function create() {
       bullet.setVelocityY(300);
 
       if (alien.active) {
-        let delay = Phaser.Math.Between(200, 3500); // random delay
+        let delay = Phaser.Math.Between(300, 4100); // random delay
         alien.nextShootEvent = this.time.delayedCall(delay, shoot, [], this);
       }
     };
 
     // Add an initial delay before the first shot
-    let initialDelay = Phaser.Math.Between(0, 4000);
+    let initialDelay = Phaser.Math.Between(0, 4500);
     alien.nextShootEvent = this.time.delayedCall(initialDelay, shoot, [], this);
   });
 
   // Add audio
   explosionSound = this.sound.add("explosionSound");
   shootSound = this.sound.add("shootSound");
+  playerDeadSound = this.sound.add("impactScreamSound");
 
-  // Add music
-  level1Music = this.sound.add("level1Music");
+  // Add music, unless the user said they don't want it
   let params = new URLSearchParams(window.location.search);
-  // Allow to disable music with ?noMusic=true
   if (params.get("noMusic") !== "true") {
+    level1Music = this.sound.add("level1Music");
     level1Music.setVolume(0.8);
     level1Music.play();
   }
+
+  // Add animations
+  this.anims.create({
+    key: "explode",
+    frames: this.anims.generateFrameNumbers("player-1-explosion", {
+      start: 0,
+      end: 9,
+      first: 0,
+    }),
+    frameRate: 23,
+    repeat: 0,
+    hideOnComplete: true,
+  });
 
   // Handle overlaps
   this.physics.add.overlap(
@@ -120,11 +148,15 @@ function create() {
     this
   );
 
+  // When the player is hit by an alien bullet
   this.physics.add.overlap(
     player,
     bullets,
     function (bullet, alien) {
       bullet.destroy();
+      let explosion = this.physics.add.sprite(player.x, player.y, "explosion");
+      explosion.play("explode");
+      playerDeadSound.play();
       player.destroy();
     },
     null,
@@ -133,17 +165,19 @@ function create() {
 }
 
 function update() {
-  if (cursors.left.isDown) {
-    player.setVelocityX(-300);
-  } else if (cursors.right.isDown) {
-    player.setVelocityX(300);
-  } else if (cursors.down.isDown) {
-    player.setVelocityY(300);
-  } else if (cursors.up.isDown) {
-    player.setVelocityY(-300);
-  } else {
-    player.setVelocityX(0);
-    player.setVelocityY(0);
+  if (player.active) {
+    if (cursors.left.isDown) {
+      player.setVelocityX(-gameSettings.playerSpeed);
+    } else if (cursors.right.isDown) {
+      player.setVelocityX(gameSettings.playerSpeed);
+    } else if (cursors.down.isDown) {
+      player.setVelocityY(gameSettings.playerSpeed);
+    } else if (cursors.up.isDown) {
+      player.setVelocityY(-gameSettings.playerSpeed);
+    } else {
+      player.setVelocityX(0);
+      player.setVelocityY(0);
+    }
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
@@ -152,7 +186,7 @@ function update() {
       player.y - player.height + 40,
       "bullet"
     );
-    bullet.setVelocityY(-300);
+    bullet.setVelocityY(-gameSettings.playerSpeed);
     shootSound.play();
   }
 
