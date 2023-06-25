@@ -84,6 +84,10 @@ function create() {
   cursors = this.input.keyboard.createCursorKeys();
   bullets = this.physics.add.group();
   playerBullets = this.physics.add.group();
+
+  /*
+   * ALIENS
+   */
   aliens = this.physics.add.group({
     key: "alien",
     repeat: 10,
@@ -105,12 +109,37 @@ function create() {
       }
     };
 
+    let move = () => {
+      let direction = Phaser.Math.Between(-1, 1);
+      let distance = Phaser.Math.Between(0, 100);
+
+      // calculate the target x position
+      let target = alien.x + direction * distance;
+      if (target > config.width - alien.width || target < 0) {
+        target = alien.x;
+      }
+
+      // Create a tween that changes the x position of the alien
+      this.tweens.add({
+        targets: alien,
+        x: target,
+        duration: Phaser.Math.Between(500, 1500), // random duration between 500ms and 1500ms
+        ease: "Linear", // use linear easing
+        onComplete: alien.active ? move : null, // call this function again once the tween completes
+      });
+    };
+
+    let movementDelay = Phaser.Math.Between(0, 3000);
+    alien.nextMoveEvent = this.time.delayedCall(movementDelay, move, [], this);
+
     // Add an initial delay before the first shot
     let initialDelay = Phaser.Math.Between(0, 4500);
     alien.nextShootEvent = this.time.delayedCall(initialDelay, shoot, [], this);
   });
 
-  // Add audio
+  /*
+   * SOUNDS
+   */
   explosionSound = this.sound.add("explosionSound");
   shootSound = this.sound.add("shootSound");
   playerDeadSound = this.sound.add("impactScreamSound");
