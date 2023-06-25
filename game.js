@@ -106,7 +106,7 @@ function create() {
     bullets,
     function (bullet, alien) {
       bullet.destroy();
-      alert("You died");
+      player.destroy();
     },
     null,
     this
@@ -115,11 +115,16 @@ function create() {
 
 function update() {
   if (cursors.left.isDown) {
-    player.setVelocityX(-350);
+    player.setVelocityX(-300);
   } else if (cursors.right.isDown) {
-    player.setVelocityX(350);
+    player.setVelocityX(300);
+  } else if (cursors.down.isDown) {
+    player.setVelocityY(300);
+  } else if (cursors.up.isDown) {
+    player.setVelocityY(-300);
   } else {
     player.setVelocityX(0);
+    player.setVelocityY(0);
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
@@ -128,7 +133,7 @@ function update() {
       player.y - player.height + 40,
       "bullet"
     );
-    bullet.setVelocityY(-250);
+    bullet.setVelocityY(-300);
     shootSound.play();
   }
 
