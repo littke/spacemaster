@@ -1,11 +1,17 @@
 import Phaser from "phaser";
 
+// Images
 import playerImg from "./assets/player.png";
 import bulletImg from "./assets/bullet.png";
 import alienImg from "./assets/alien.png";
 import spaceBg from "./assets/space.png";
+
+// Sounds
 import explosionSoundFile from "./assets/sounds/explosion.wav";
 import shootSoundFile from "./assets/sounds/shoot.wav";
+
+// Music
+import music1File from "./assets/music/172_drum_n_bass_regal_heavy_electronic_drums.wav";
 
 const config = {
   type: Phaser.AUTO,
@@ -33,6 +39,7 @@ let aliens;
 let bg;
 let explosionSound;
 let shootSound;
+let level1Music;
 
 function preload() {
   this.load.image("player", playerImg);
@@ -41,6 +48,7 @@ function preload() {
   this.load.image("space", spaceBg);
   this.load.audio("explosionSound", explosionSoundFile);
   this.load.audio("shootSound", shootSoundFile);
+  this.load.audio("level1Music", music1File);
 }
 
 function create() {
@@ -84,6 +92,15 @@ function create() {
   // Add audio
   explosionSound = this.sound.add("explosionSound");
   shootSound = this.sound.add("shootSound");
+
+  // Add music
+  level1Music = this.sound.add("level1Music");
+  let params = new URLSearchParams(window.location.search);
+  // Allow to disable music with ?noMusic=true
+  if (params.get("noMusic") !== "true") {
+    level1Music.setVolume(0.8);
+    level1Music.play();
+  }
 
   // Handle overlaps
   this.physics.add.overlap(
