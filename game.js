@@ -15,8 +15,8 @@ import music1File from "./assets/music/172_drum_n_bass_regal_heavy_electronic_dr
 
 const config = {
   type: Phaser.AUTO,
-  width: 1400,
-  height: 600,
+  width: 1500,
+  height: 800,
   physics: {
     default: "arcade",
     arcade: {
@@ -53,20 +53,22 @@ function preload() {
 
 function create() {
   // Create a stars background
-  bg = this.add.tileSprite(0, 0, 1400, 600, "space");
+  bg = this.add.tileSprite(0, 0, 1500, 800, "space");
   bg.setOrigin(0, 0);
 
   player = this.physics.add.sprite(
     config.width / 2,
-    config.height - 50,
+    config.height - 150,
     "player"
   );
+  player.setCollideWorldBounds(true); // keeps the player within the game world
+
   cursors = this.input.keyboard.createCursorKeys();
   bullets = this.physics.add.group();
   aliens = this.physics.add.group({
     key: "alien",
     repeat: 10,
-    setXY: { x: 100, y: 100, stepX: 115 },
+    setXY: { x: 100, y: 100, stepX: 130 },
   });
 
   aliens.getChildren().forEach((alien) => {
@@ -79,7 +81,7 @@ function create() {
       bullet.setVelocityY(300);
 
       if (alien.active) {
-        let delay = Phaser.Math.Between(200, 3500); // random delay between 200ms and 2000ms
+        let delay = Phaser.Math.Between(200, 3500); // random delay
         alien.nextShootEvent = this.time.delayedCall(delay, shoot, [], this);
       }
     };
