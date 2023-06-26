@@ -18,6 +18,9 @@ import music1File from "./assets/music/172_drum_n_bass_regal_heavy_electronic_dr
 // Sprites
 import player1ExplosionSprite from "./assets/player-1-explosion-sprite.png";
 
+// Upgrades
+import x2UpgradeImg from "./assets/upgrades/x2.png";
+
 const config = {
   type: Phaser.AUTO,
   width: 1500,
@@ -42,6 +45,7 @@ let cursors;
 let bullets;
 let playerBullets;
 let aliens;
+let upgrades;
 let bg;
 let explosionSound;
 let shootSound;
@@ -58,6 +62,7 @@ function preload() {
   this.load.image("playerBullet", playerBulletImg);
   this.load.image("alien", alienImg);
   this.load.image("space", spaceBg);
+  this.load.image("x2Upgrade", x2UpgradeImg);
   this.load.audio("explosionSound", explosionSoundFile);
   this.load.audio("shootSound", shootSoundFile);
   this.load.audio("impactScreamSound", impactScreamFile);
@@ -79,6 +84,10 @@ function create() {
     config.height - 150,
     "player"
   );
+  player.setSpeed = (speed) => {
+    player.speed = speed;
+  };
+  player.speed = gameSettings.playerSpeed;
   player.setCollideWorldBounds(true); // keeps the player within the game world
 
   cursors = this.input.keyboard.createCursorKeys();
@@ -95,6 +104,13 @@ function create() {
   });
 
   aliens.getChildren().forEach((alien) => {
+    alien.dropUpgrade = {
+      x2: () => {
+        let upgrade = upgrades.create(alien.x, alien.y, "x2Upgrade");
+        upgrade.setVelocityY(200);
+      },
+    };
+
     let shoot = () => {
       let bullet = bullets.create(
         alien.x,
@@ -138,6 +154,12 @@ function create() {
   });
 
   /*
+   * UPGRADES
+   */
+
+  upgrades = this.physics.add.group();
+
+  /*
    * SOUNDS
    */
   explosionSound = this.sound.add("explosionSound");
@@ -147,9 +169,11 @@ function create() {
   // Add music, unless the user said they don't want it
   let params = new URLSearchParams(window.location.search);
   if (params.get("noMusic") !== "true") {
-    level1Music = this.sound.add("level1Music");
-    level1Music.setVolume(0.8);
-    level1Music.play();
+    if (!level1Music) {
+      level1Music = this.sound.add("level1Music");
+      level1Music.setVolume(0.8);
+      level1Music.play();
+    }
   }
 
   // Add animations
@@ -165,7 +189,10 @@ function create() {
     hideOnComplete: true,
   });
 
-  // Handle overlaps
+  /*
+   * OVERLAPS
+   */
+
   // When a player bullet hits an alien
   this.physics.add.overlap(
     playerBullets,
@@ -177,6 +204,14 @@ function create() {
         alien.nextShootEvent.remove();
       }
       alien.destroy();
+
+      // Drop an upgrade
+      let dropUpgradeChance = Phaser.Math.Between(0, 100);
+      if (dropUpgradeChance > 80) {
+        alien.dropUpgrade.x2();
+      }
+
+      // Let's see if it's game over
       let aliensAlive = false;
       if (
         aliens.getChildren().forEach((alien) => {
@@ -221,8 +256,7 @@ function create() {
       playerDeadSound.play();
       player.destroy();
 
-      // Show "You lose" text
-      let text = this.add
+      let youLoseText = this.add
         .text(0, 0, "You lose", {
           font: '64px "Arial Black"',
           fill: "#fff",
@@ -231,10 +265,48 @@ function create() {
         .setPosition(config.width / 2, config.height / 2)
         .setVisible(false);
 
+      let spaceToRestartText = this.add
+        .text(0, 0, "Hit <Space> to restart", {
+          font: '34px "Arial Black"',
+          fill: "#fff",
+        })
+        .setOrigin(0.5, 0.5)
+        .setPosition(config.width / 2, config.height / 2 + 100)
+        .setVisible(false);
+
       this.time.delayedCall(
         600,
         function () {
-          text.setVisible(true); // after 300ms, the text becomes visible
+          youLoseText.setVisible(true);
+        },
+        [],
+        this
+      );
+      this.time.delayedCall(
+        1800,
+        function () {
+          spaceToRestartText.setVisible(true);
+        },
+        [],
+        this
+      );
+    },
+    null,
+    this
+  );
+
+  // When the player picks up an upgrade
+  this.physics.add.overlap(
+    player,
+    upgrades,
+    function (player, upgrade) {
+      upgrade.destroy();
+      player.setSpeed(gameSettings.playerSpeed * 2);
+
+      this.time.delayedCall(
+        3000,
+        function () {
+          player.setSpeed(gameSettings.playerSpeed);
         },
         [],
         this
@@ -248,13 +320,13 @@ function create() {
 function update() {
   if (player.active) {
     if (cursors.left.isDown) {
-      player.setVelocityX(-gameSettings.playerSpeed);
+      player.setVelocityX(-player.speed);
     } else if (cursors.right.isDown) {
-      player.setVelocityX(gameSettings.playerSpeed);
+      player.setVelocityX(player.speed);
     } else if (cursors.down.isDown) {
-      player.setVelocityY(gameSettings.playerSpeed);
+      player.setVelocityY(player.speed);
     } else if (cursors.up.isDown) {
-      player.setVelocityY(-gameSettings.playerSpeed);
+      player.setVelocityY(-player.speed);
     } else {
       player.setVelocityX(0);
       player.setVelocityY(0);
@@ -262,15 +334,18 @@ function update() {
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-    if (!player.active) return;
-
-    let playerBullet = playerBullets.create(
-      player.x,
-      player.y - player.height + 40,
-      "playerBullet"
-    );
-    playerBullet.setVelocityY(-gameSettings.playerSpeed);
-    shootSound.play();
+    if (player.active) {
+      let playerBullet = playerBullets.create(
+        player.x,
+        player.y - player.height + 40,
+        "playerBullet"
+      );
+      playerBullet.setVelocityY(-player.speed);
+      shootSound.play();
+    } else {
+      // Restart the game
+      this.scene.restart();
+    }
   }
 
   // Move the texture of the tile sprite upwards
