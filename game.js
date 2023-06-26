@@ -177,6 +177,34 @@ function create() {
         alien.nextShootEvent.remove();
       }
       alien.destroy();
+      let aliensAlive = false;
+      if (
+        aliens.getChildren().forEach((alien) => {
+          if (alien.active) {
+            aliensAlive = true;
+          }
+        })
+      );
+      if (aliensAlive == false) {
+        // Show "You win" text
+        let text = this.add
+          .text(0, 0, "You win!", {
+            font: '64px "Arial Black"',
+            fill: "#fff",
+          })
+          .setOrigin(0.5, 0.5)
+          .setPosition(config.width / 2, config.height / 2)
+          .setVisible(false);
+
+        this.time.delayedCall(
+          600,
+          function () {
+            text.setVisible(true); // after 300ms, the text becomes visible
+          },
+          [],
+          this
+        );
+      }
     },
     null,
     this
@@ -192,6 +220,25 @@ function create() {
       explosion.play("explode");
       playerDeadSound.play();
       player.destroy();
+
+      // Show "You lose" text
+      let text = this.add
+        .text(0, 0, "You lose", {
+          font: '64px "Arial Black"',
+          fill: "#fff",
+        })
+        .setOrigin(0.5, 0.5)
+        .setPosition(config.width / 2, config.height / 2)
+        .setVisible(false);
+
+      this.time.delayedCall(
+        600,
+        function () {
+          text.setVisible(true); // after 300ms, the text becomes visible
+        },
+        [],
+        this
+      );
     },
     null,
     this
@@ -215,6 +262,8 @@ function update() {
   }
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
+    if (!player.active) return;
+
     let playerBullet = playerBullets.create(
       player.x,
       player.y - player.height + 40,
