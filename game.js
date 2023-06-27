@@ -51,9 +51,11 @@ let explosionSound;
 let shootSound;
 let playerDeadSound;
 let level1Music;
+let params = new URLSearchParams(window.location.search);
 
 let gameSettings = {
   playerSpeed: 330,
+  playerWeapon: "bullets",
 };
 
 function preload() {
@@ -75,10 +77,15 @@ function preload() {
 }
 
 function create() {
-  // Create a stars background
+  /*
+   * SCENE
+   */
   bg = this.add.tileSprite(0, 0, 1500, 900, "space");
   bg.setOrigin(0, 0);
 
+  /*
+   * PLAYER
+   */
   player = this.physics.add.sprite(
     config.width / 2,
     config.height - 150,
@@ -87,9 +94,16 @@ function create() {
   player.setSpeed = (speed) => {
     player.speed = speed;
   };
+  player.setWeapons = (weapon) => {
+    player.weapon = weapon;
+  };
   player.speed = gameSettings.playerSpeed;
+  player.weapon = gameSettings.playerWeapon;
   player.setCollideWorldBounds(true); // keeps the player within the game world
 
+  /*
+   * MISC SPRITES
+   */
   cursors = this.input.keyboard.createCursorKeys();
   bullets = this.physics.add.group();
   playerBullets = this.physics.add.group();
@@ -107,6 +121,14 @@ function create() {
     alien.dropUpgrade = {
       x2: () => {
         let upgrade = upgrades.create(alien.x, alien.y, "x2Upgrade");
+        upgrade.enable = (player) => {
+          player.setSpeed(gameSettings.playerSpeed * 2);
+          player.setWeapons("double-bullets");
+        };
+        upgrade.expire = (player) => {
+          player.setSpeed(gameSettings.playerSpeed);
+          player.setWeapons("bullets");
+        };
         upgrade.setVelocityY(200);
       },
     };
@@ -166,8 +188,15 @@ function create() {
   shootSound = this.sound.add("shootSound");
   playerDeadSound = this.sound.add("impactScreamSound");
 
+  /*
+   *
+   * DEVELOPMENT TOOLS
+   *
+   * Enable these as query strings when needed
+   * *
+   */
+
   // Add music, unless the user said they don't want it
-  let params = new URLSearchParams(window.location.search);
   if (params.get("noMusic") !== "true") {
     if (!level1Music) {
       level1Music = this.sound.add("level1Music");
@@ -175,6 +204,14 @@ function create() {
       level1Music.play();
     }
   }
+
+  if (params.get("dropUpgrades") === "true") {
+    aliens.getChildren()[5].dropUpgrade.x2();
+  }
+
+  /*
+   * ANIMATIONS
+   */
 
   // Add animations
   this.anims.create({
@@ -300,13 +337,13 @@ function create() {
     player,
     upgrades,
     function (player, upgrade) {
+      upgrade.enable(player);
       upgrade.destroy();
-      player.setSpeed(gameSettings.playerSpeed * 2);
 
       this.time.delayedCall(
         3000,
         function () {
-          player.setSpeed(gameSettings.playerSpeed);
+          upgrade.expire(player);
         },
         [],
         this
@@ -335,13 +372,29 @@ function update() {
 
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
     if (player.active) {
-      let playerBullet = playerBullets.create(
-        player.x,
-        player.y - player.height + 40,
-        "playerBullet"
-      );
-      playerBullet.setVelocityY(-player.speed);
-      shootSound.play();
+      if (player.weapon === "bullets") {
+        let playerBullet = playerBullets.create(
+          player.x,
+          player.y - player.height + 40,
+          "playerBullet"
+        );
+        playerBullet.setVelocityY(-player.speed);
+        shootSound.play();
+      } else if (player.weapon === "double-bullets") {
+        let playerBullet1 = playerBullets.create(
+          player.x - 20,
+          player.y - player.height + 40,
+          "playerBullet"
+        );
+        playerBullet1.setVelocityY(-player.speed);
+        let playerBullet2 = playerBullets.create(
+          player.x + 20,
+          player.y - player.height + 40,
+          "playerBullet"
+        );
+        playerBullet2.setVelocityY(-player.speed);
+        shootSound.play();
+      }
     } else {
       // Restart the game
       this.scene.restart();
