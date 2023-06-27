@@ -257,7 +257,7 @@ function create() {
           }
         })
       );
-      if (aliensAlive == false) {
+      if (aliensAlive == false && player.active) {
         // Show "You win" text
         let text = this.add
           .text(0, 0, "You win!", {
