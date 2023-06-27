@@ -44,7 +44,6 @@ let player;
 let cursors;
 let bullets;
 let playerBullets;
-let aliens;
 let upgrades;
 let bg;
 let explosionSound;
@@ -111,69 +110,170 @@ function create() {
   /*
    * ALIENS
    */
-  aliens = this.physics.add.group({
-    key: "alien",
-    repeat: 10,
-    setXY: { x: 100, y: 100, stepX: 130 },
-  });
+  class Alien extends Phaser.Physics.Arcade.Sprite {
+    constructor(scene, texture, shootDelay, movementSpeed) {
+      super(scene, 0, 0, texture);
+      this.scene = scene;
+      this.shootDelay = shootDelay;
+      this.movementSpeed = movementSpeed;
+      // Add this to the physics system
+      this.scene.physics.world.enable(this);
+      // Initialize shooting and moving
+      this.startShooting();
+      this.startMoving();
 
-  aliens.getChildren().forEach((alien) => {
-    alien.dropUpgrade = {
-      x2: () => {
-        let upgrade = upgrades.create(alien.x, alien.y, "x2Upgrade");
-        upgrade.enable = (player) => {
-          player.setSpeed(gameSettings.playerSpeed * 2);
-          player.setWeapons("double-bullets");
-        };
-        upgrade.expire = (player) => {
-          player.setSpeed(gameSettings.playerSpeed);
-          player.setWeapons("bullets");
-        };
-        upgrade.setVelocityY(200);
-      },
-    };
+      this.dropUpgrade = {
+        x2: () => {
+          let upgrade = upgrades.create(this.x, this.y, "x2Upgrade");
+          upgrade.enable = (player) => {
+            player.setSpeed(gameSettings.playerSpeed * 2);
+            player.setWeapons("double-bullets");
+          };
+          upgrade.expire = (player) => {
+            player.setSpeed(gameSettings.playerSpeed);
+            player.setWeapons("bullets");
+          };
+          upgrade.setVelocityY(200);
+        },
+      };
+    }
 
-    let shoot = () => {
-      let bullet = bullets.create(
-        alien.x,
-        alien.y + alien.height - 30,
-        "bullet"
+    setup(x, y) {
+      this.setPosition(x, y);
+      this.setActive(true);
+      this.setVisible(true);
+    }
+
+    startShooting() {
+      let shoot = () => {
+        let bullet = bullets.create(
+          this.x,
+          this.y + this.height - 30,
+          "bullet"
+        );
+        bullet.setVelocityY(300);
+
+        if (this.active) {
+          this.nextShootEvent = this.scene.time.delayedCall(
+            this.shootDelay,
+            shoot,
+            [],
+            this
+          );
+        }
+      };
+
+      // Add an initial delay before the first shot
+      let initialDelay = Phaser.Math.Between(0, this.shootDelay);
+      this.nextShootEvent = this.scene.time.delayedCall(
+        initialDelay,
+        shoot,
+        [],
+        this
       );
-      bullet.setVelocityY(300);
+    }
 
-      if (alien.active) {
-        let delay = Phaser.Math.Between(300, 4100); // random delay
-        alien.nextShootEvent = this.time.delayedCall(delay, shoot, [], this);
-      }
-    };
+    startMoving() {
+      let move = () => {
+        if (!this.active) return;
 
-    let move = () => {
-      let direction = Phaser.Math.Between(-1, 1);
-      let distance = Phaser.Math.Between(0, 100);
+        let direction = Phaser.Math.Between(-1, 1);
+        let distance = Phaser.Math.Between(0, 100);
 
-      // calculate the target x position
-      let target = alien.x + direction * distance;
-      if (target > config.width - alien.width || target < 0) {
-        target = alien.x;
-      }
+        // calculate the target x position
+        let target = this.x + direction * distance;
+        if (target > this.scene.game.config.width - this.width || target < 0) {
+          target = this.x;
+        }
 
-      // Create a tween that changes the x position of the alien
-      this.tweens.add({
-        targets: alien,
-        x: target,
-        duration: Phaser.Math.Between(500, 1500), // random duration between 500ms and 1500ms
-        ease: "Linear", // use linear easing
-        onComplete: alien.active ? move : null, // call this function again once the tween completes
-      });
-    };
+        // Create a tween that changes the x position of the alien
+        this.scene.tweens.add({
+          targets: this,
+          x: target,
+          duration: this.movementSpeed, // random duration between 500ms and 1500ms
+          ease: "Linear", // use linear easing
+          onComplete: this.active ? move : null, // call this function again once the tween completes
+        });
+      };
 
-    let movementDelay = Phaser.Math.Between(0, 3000);
-    alien.nextMoveEvent = this.time.delayedCall(movementDelay, move, [], this);
+      let movementDelay = Phaser.Math.Between(0, this.movementSpeed);
+      this.nextMoveEvent = this.scene.time.delayedCall(
+        movementDelay,
+        move,
+        [],
+        this
+      );
+    }
+  }
 
-    // Add an initial delay before the first shot
-    let initialDelay = Phaser.Math.Between(0, 4500);
-    alien.nextShootEvent = this.time.delayedCall(initialDelay, shoot, [], this);
+  class RegularAlien extends Alien {
+    constructor(scene) {
+      super(
+        scene,
+        "alien",
+        Phaser.Math.Between(300, 4100),
+        Phaser.Math.Between(500, 1500)
+      );
+    }
+  }
+
+  class BossAlien extends Alien {
+    constructor(scene) {
+      super(
+        scene,
+        "boss",
+        Phaser.Math.Between(150, 2050),
+        Phaser.Math.Between(250, 750)
+      );
+      this.setLife(2); // Extra life
+    }
+
+    setLife(value) {
+      this.life = value;
+    }
+
+    startShooting() {
+      let shoot = () => {
+        let bullet = bullets.create(
+          this.x,
+          this.y + this.height - 30,
+          "bullet"
+        );
+        bullet.setVelocityY(300);
+
+        if (this.active) {
+          this.nextShootEvent = this.scene.time.delayedCall(
+            this.shootDelay / 2,
+            shoot,
+            [],
+            this
+          );
+        }
+      };
+
+      // Add an initial delay before the first shot
+      let initialDelay = Phaser.Math.Between(0, this.shootDelay);
+      this.nextShootEvent = this.scene.time.delayedCall(
+        initialDelay,
+        shoot,
+        [],
+        this
+      );
+    }
+  }
+
+  // Create the aliens
+  let regularAliens = this.physics.add.group({
+    classType: RegularAlien,
   });
+
+  for (let i = 0; i < 10; i++) {
+    let alien = regularAliens.get();
+    alien.setup(100 + 130 * i, 100);
+  }
+
+  //let bossAlien = new BossAlien(this, 100, 50);
+  //this.physics.world.enable(bossAlien);
 
   /*
    * UPGRADES
@@ -206,7 +306,7 @@ function create() {
   }
 
   if (params.get("dropUpgrades") === "true") {
-    aliens.getChildren()[5].dropUpgrade.x2();
+    regularAliens.getChildren()[5].dropUpgrade.x2();
   }
 
   /*
@@ -233,7 +333,7 @@ function create() {
   // When a player bullet hits an alien
   this.physics.add.overlap(
     playerBullets,
-    aliens,
+    regularAliens,
     function (playerBullet, alien) {
       playerBullet.destroy();
       explosionSound.play();
@@ -251,7 +351,7 @@ function create() {
       // Let's see if it's game over
       let aliensAlive = false;
       if (
-        aliens.getChildren().forEach((alien) => {
+        regularAliens.getChildren().forEach((alien) => {
           if (alien.active) {
             aliensAlive = true;
           }
