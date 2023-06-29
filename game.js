@@ -39,11 +39,17 @@ const config = {
   },
 };
 
+let gameSettings = {
+  playerSpeed: 330,
+  playerWeapon: "bullets",
+  regularAliens: 11,
+};
+
 let game = new Phaser.Game(config);
 
 let player;
 let cursors;
-let bullets;
+let alienBullets;
 let playerBullets;
 let upgrades;
 let bg;
@@ -54,11 +60,6 @@ let level1Music;
 let showBoss = false;
 let bossAlien;
 let params = new URLSearchParams(window.location.search);
-
-let gameSettings = {
-  playerSpeed: 330,
-  playerWeapon: "bullets",
-};
 
 function preload() {
   this.load.image("player", playerImg);
@@ -108,7 +109,7 @@ function create() {
    * MISC SPRITES
    */
   cursors = this.input.keyboard.createCursorKeys();
-  bullets = this.physics.add.group();
+  alienBullets = this.physics.add.group();
   playerBullets = this.physics.add.group();
 
   /*
@@ -123,7 +124,9 @@ function create() {
       // Add this to the physics system
       this.scene.physics.world.enable(this);
       // Initialize shooting and moving
-      this.startShooting();
+      if (params.get("noAlienShooting") !== "true") {
+        this.startShooting();
+      }
       this.startMoving();
 
       this.dropUpgrade = {
@@ -150,12 +153,16 @@ function create() {
 
     startShooting() {
       let shoot = () => {
-        let bullet = bullets.create(this.x, this.y + this.height / 2, "bullet");
+        let bullet = alienBullets.create(
+          this.x,
+          this.y + this.height / 2,
+          "bullet"
+        );
         bullet.setVelocityY(300);
 
         if (this.active) {
           this.nextShootEvent = this.scene.time.delayedCall(
-            Phaser.Math.Between(250, this.shootDelay),
+            Phaser.Math.Between(350, this.shootDelay),
             shoot,
             [],
             this
@@ -208,14 +215,14 @@ function create() {
 
   class RegularAlien extends Alien {
     constructor(scene) {
-      super(scene, "alien", 3700, 1000);
+      super(scene, "alien", 3900, 1000);
     }
   }
 
   class BossAlien extends Alien {
     constructor(scene) {
-      super(scene, "bossAlien", 1100, 400);
-      this.setLife(3); // Extra life
+      super(scene, "bossAlien", 1300, 400);
+      this.setLife(10); // Extra life
     }
 
     setLife(value) {
@@ -228,7 +235,7 @@ function create() {
     classType: RegularAlien,
   });
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < gameSettings.regularAliens; i++) {
     let alien = regularAliens.get();
     alien.setup(100 + 130 * i, 100);
   }
@@ -306,23 +313,55 @@ function create() {
         alien.dropUpgrade.x2();
       }
 
-      // Let's see if it's game over
+      // Let's see if all regular aliens are dead
       let aliensAlive = false;
-      if (
-        regularAliens.getChildren().forEach((alien) => {
-          if (alien.active) {
-            aliensAlive = true;
-          }
-        })
-      );
-      if (aliensAlive == false && player.active) {
+      regularAliens.getChildren().forEach((alien) => {
+        if (alien.active) {
+          aliensAlive = true;
+        }
+      });
+      if (aliensAlive === false && player.active) {
         if (!showBoss) {
           showBoss = true;
 
-          bossAlien = this.physics.add
-            .group({ classType: BossAlien })
-            .get()
-            .setup(config.width / 2, 170);
+          let bossAlienGroup = this.physics.add.group({ classType: BossAlien });
+          bossAlien = bossAlienGroup.get();
+          bossAlien.setup(config.width / 2, 170);
+
+          // If the player hits the boss alien
+          this.physics.add.overlap(
+            bossAlien,
+            playerBullets,
+            function (bossAlien, playerBullet) {
+              playerBullet.destroy();
+              bossAlien.setLife(bossAlien.life - 1);
+
+              if (bossAlien.life === 0 && player.active) {
+                bossAlien.destroy();
+
+                // Show "You win" text
+                let text = this.add
+                  .text(0, 0, "You win!", {
+                    font: '64px "Arial Black"',
+                    fill: "#fff",
+                  })
+                  .setOrigin(0.5, 0.5)
+                  .setPosition(config.width / 2, config.height / 2)
+                  .setVisible(false);
+
+                this.time.delayedCall(
+                  600,
+                  function () {
+                    text.setVisible(true); // after 300ms, the text becomes visible
+                  },
+                  [],
+                  this
+                );
+              }
+            },
+            null,
+            this
+          );
         }
       }
     },
@@ -330,42 +369,12 @@ function create() {
     this
   );
 
-  // If the player hits the boss alien
-  this.physics.add.overlap(bullets, bossAlien, function (bullets, bossAlien) {
-    bullets.destroy();
-    bossAlien.setLife(bossAlien.life - 1);
-    console.log(bossAlien.life);
-
-    if (bossAlien.life <= 0) {
-      bossAlien.destroy();
-
-      // Show "You win" text
-      let text = this.add
-        .text(0, 0, "You win!", {
-          font: '64px "Arial Black"',
-          fill: "#fff",
-        })
-        .setOrigin(0.5, 0.5)
-        .setPosition(config.width / 2, config.height / 2)
-        .setVisible(false);
-
-      this.time.delayedCall(
-        600,
-        function () {
-          text.setVisible(true); // after 300ms, the text becomes visible
-        },
-        [],
-        this
-      );
-    }
-  });
-
   // When the player is hit by an alien bullet
   this.physics.add.overlap(
     player,
-    bullets,
-    function (bullet, alien) {
-      bullet.destroy();
+    alienBullets,
+    function (player, alienBullet) {
+      alienBullet.destroy();
       let explosion = this.physics.add.sprite(player.x, player.y, "explosion");
       explosion.play("explode");
       playerDeadSound.play();
