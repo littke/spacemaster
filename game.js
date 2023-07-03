@@ -4,6 +4,7 @@ import Phaser from "phaser";
 import playerImg from "./assets/player.png";
 import bulletImg from "./assets/bullet.png";
 import playerBulletImg from "./assets/player-bullet.png";
+import bossAlienBulletImg from "./assets/boss-alien-bullet.png";
 import alienImg from "./assets/alien.png";
 import bossAlienImg from "./assets/boss-alien.png";
 import spaceBg from "./assets/space.png";
@@ -39,14 +40,15 @@ const config = {
   },
 };
 
+let params = new URLSearchParams(window.location.search);
+
 let gameSettings = {
   playerSpeed: 330,
   playerWeapon: "bullets",
-  regularAliens: 11,
+  regularAliens: params.get("regularAliens") ? params.get("regularAliens") : 11,
 };
 
 let game = new Phaser.Game(config);
-
 let player;
 let cursors;
 let alienBullets;
@@ -57,9 +59,7 @@ let explosionSound;
 let shootSound;
 let playerDeadSound;
 let level1Music;
-let showBoss = false;
 let bossAlien;
-let params = new URLSearchParams(window.location.search);
 
 function preload() {
   this.load.image("player", playerImg);
@@ -67,6 +67,7 @@ function preload() {
   this.load.image("playerBullet", playerBulletImg);
   this.load.image("alien", alienImg);
   this.load.image("bossAlien", bossAlienImg);
+  this.load.image("bossAlienBullet", bossAlienBulletImg);
   this.load.image("space", spaceBg);
   this.load.image("x2Upgrade", x2UpgradeImg);
   this.load.audio("explosionSound", explosionSoundFile);
@@ -116,18 +117,19 @@ function create() {
    * ALIENS
    */
   class Alien extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, texture, shootDelay, movementSpeed) {
+    constructor(scene, texture, shootDelay, movementSpeed, spawning) {
       super(scene, 0, 0, texture);
       this.scene = scene;
       this.shootDelay = shootDelay;
       this.movementSpeed = movementSpeed;
+      this.spawning = spawning;
       // Add this to the physics system
       this.scene.physics.world.enable(this);
       // Initialize shooting and moving
-      if (params.get("noAlienShooting") !== "true") {
+      if (params.get("noAlienShooting") !== "true" && !this.spawning) {
         this.startShooting();
       }
-      this.startMoving();
+      if (!this.spawning) this.startMoving();
 
       this.dropUpgrade = {
         x2: () => {
@@ -221,12 +223,75 @@ function create() {
 
   class BossAlien extends Alien {
     constructor(scene) {
-      super(scene, "bossAlien", 1300, 400);
-      this.setLife(10); // Extra life
+      super(scene, "bossAlien", 1800, 400, true);
+      this.setLife(20); // Extra life
+    }
+
+    setup(x, y) {
+      this.setPosition(x, -100);
+      this.spawning = true;
+      // Create a tween that changes the x position of the boss alien
+      this.scene.tweens.add({
+        targets: this,
+        y: y,
+        duration: 1300,
+        ease: "Linear", // use linear easing
+        onComplete: () => {
+          if (this.active) {
+            this.startMoving();
+            this.startShooting();
+            this.spawning = false;
+          }
+        },
+      });
+
+      this.setActive(true);
+      this.setVisible(true);
     }
 
     setLife(value) {
       this.life = value;
+    }
+
+    startShooting() {
+      let shoot = () => {
+        if (!this.active) return;
+
+        let bossAlienBullet = alienBullets.create(
+          this.x,
+          this.y + this.height / 2 - 70,
+          "bossAlienBullet"
+        );
+
+        // Determine the angle towards the target
+        let angle = Phaser.Math.Angle.Between(
+          this.x,
+          this.y,
+          player.x,
+          player.y
+        );
+
+        // Determine the speed of movement
+        let speed = 350;
+
+        // Determine the x and y velocities
+        let velocityX = speed * Math.cos(angle);
+        let velocityY = speed * Math.sin(angle);
+
+        // Set these velocities
+        bossAlienBullet.setVelocity(velocityX, velocityY);
+
+        if (this.active) {
+          this.nextShootEvent = this.scene.time.delayedCall(
+            Phaser.Math.Between(270, this.shootDelay),
+            shoot,
+            [],
+            this
+          );
+        }
+      };
+
+      shoot();
     }
   }
 
@@ -295,7 +360,7 @@ function create() {
    * OVERLAPS
    */
 
-  // When a player bullet hits an alien
+  // When a player bullet hits an alien (or later, a boss alien)
   this.physics.add.overlap(
     playerBullets,
     regularAliens,
@@ -321,48 +386,48 @@ function create() {
         }
       });
       if (aliensAlive === false && player.active) {
-        if (!showBoss) {
-          showBoss = true;
+        let bossAlienGroup = this.physics.add.group({ classType: BossAlien });
+        bossAlien = bossAlienGroup.get();
+        bossAlien.setup(config.width / 2, 170);
 
-          let bossAlienGroup = this.physics.add.group({ classType: BossAlien });
-          bossAlien = bossAlienGroup.get();
-          bossAlien.setup(config.width / 2, 170);
+        // If the player hits the boss alien
+        this.physics.add.overlap(
+          bossAlien,
+          playerBullets,
+          function (bossAlien, playerBullet) {
+            // Don't allow shooting the boss while it's spawning
 
-          // If the player hits the boss alien
-          this.physics.add.overlap(
-            bossAlien,
-            playerBullets,
-            function (bossAlien, playerBullet) {
-              playerBullet.destroy();
-              bossAlien.setLife(bossAlien.life - 1);
+            playerBullet.destroy();
 
-              if (bossAlien.life === 0 && player.active) {
-                bossAlien.destroy();
+            if (bossAlien.spawning) return;
+            bossAlien.setLife(bossAlien.life - 1);
 
-                // Show "You win" text
-                let text = this.add
-                  .text(0, 0, "You win!", {
-                    font: '64px "Arial Black"',
-                    fill: "#fff",
-                  })
-                  .setOrigin(0.5, 0.5)
-                  .setPosition(config.width / 2, config.height / 2)
-                  .setVisible(false);
+            if (bossAlien.life === 0 && player.active) {
+              bossAlien.destroy();
 
-                this.time.delayedCall(
-                  600,
-                  function () {
-                    text.setVisible(true); // after 300ms, the text becomes visible
-                  },
-                  [],
-                  this
-                );
-              }
-            },
-            null,
-            this
-          );
-        }
+              // Show "You win" text
+              let text = this.add
+                .text(0, 0, "You win!", {
+                  font: '64px "Arial Black"',
+                  fill: "#fff",
+                })
+                .setOrigin(0.5, 0.5)
+                .setPosition(config.width / 2, config.height / 2)
+                .setVisible(false);
+
+              this.time.delayedCall(
+                600,
+                function () {
+                  text.setVisible(true); // after 300ms, the text becomes visible
+                },
+                [],
+                this
+              );
+            }
+          },
+          null,
+          this
+        );
       }
     },
     null,
@@ -428,7 +493,7 @@ function create() {
       upgrade.destroy();
 
       this.time.delayedCall(
-        3000,
+        3500,
         function () {
           upgrade.expire(player);
         },
@@ -489,5 +554,5 @@ function update() {
   }
 
   // Move the texture of the tile sprite upwards
-  bg.tilePositionY -= 1.1;
+  bg.tilePositionY -= 2.5;
 }
