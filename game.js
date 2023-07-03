@@ -19,6 +19,7 @@ import music1File from "./assets/music/172_drum_n_bass_regal_heavy_electronic_dr
 
 // Sprites
 import player1ExplosionSprite from "./assets/player-1-explosion-sprite.png";
+import bossAlienExplosionSprite from "./assets/boss-alien-explosion-sprite.png";
 
 // Upgrades
 import x2UpgradeImg from "./assets/upgrades/x2.png";
@@ -60,6 +61,7 @@ let shootSound;
 let playerDeadSound;
 let level1Music;
 let bossAlien;
+let allowRestart = false;
 
 function preload() {
   this.load.image("player", playerImg);
@@ -78,6 +80,11 @@ function preload() {
     frameWidth: 230,
     frameHeight: 125,
     endFrame: 9,
+  });
+  this.load.spritesheet("boss-alien-explosion", bossAlienExplosionSprite, {
+    frameWidth: 600,
+    frameHeight: 420,
+    endFrame: 10,
   });
 }
 
@@ -126,7 +133,7 @@ function create() {
       // Add this to the physics system
       this.scene.physics.world.enable(this);
       // Initialize shooting and moving
-      if (params.get("noAlienShooting") !== "true" && !this.spawning) {
+      if (!this.spawning) {
         this.startShooting();
       }
       if (!this.spawning) this.startMoving();
@@ -135,7 +142,7 @@ function create() {
         x2: () => {
           let upgrade = upgrades.create(this.x, this.y, "x2Upgrade");
           upgrade.enable = (player) => {
-            player.setSpeed(gameSettings.playerSpeed * 2);
+            player.setSpeed(gameSettings.playerSpeed * 1.5);
             player.setWeapons("double-bullets");
           };
           upgrade.expire = (player) => {
@@ -154,6 +161,7 @@ function create() {
     }
 
     startShooting() {
+      if (params.get("noAlienShooting")) return;
       let shoot = () => {
         let bullet = alienBullets.create(
           this.x,
@@ -254,6 +262,8 @@ function create() {
     }
 
     startShooting() {
+      if (params.get("noAlienShooting")) return;
+
       let shoot = () => {
         if (!this.active) return;
 
@@ -356,6 +366,18 @@ function create() {
     hideOnComplete: true,
   });
 
+  this.anims.create({
+    key: "bossAlienExplode",
+    frames: this.anims.generateFrameNumbers("boss-alien-explosion", {
+      start: 0,
+      end: 10,
+      first: 0,
+    }),
+    frameRate: 23,
+    repeat: 0,
+    hideOnComplete: true,
+  });
+
   /*
    * OVERLAPS
    */
@@ -404,6 +426,10 @@ function create() {
 
             if (bossAlien.life === 0 && player.active) {
               bossAlien.destroy();
+              this.physics.add
+                .sprite(bossAlien.x, bossAlien.y, "bossAlienExplode")
+                .play("bossAlienExplode");
+              explosionSound.play();
 
               // Show "You win" text
               let text = this.add
@@ -416,7 +442,7 @@ function create() {
                 .setVisible(false);
 
               this.time.delayedCall(
-                600,
+                900,
                 function () {
                   text.setVisible(true); // after 300ms, the text becomes visible
                 },
@@ -472,9 +498,10 @@ function create() {
         this
       );
       this.time.delayedCall(
-        1800,
+        2100,
         function () {
           spaceToRestartText.setVisible(true);
+          allowRestart = true;
         },
         [],
         this
@@ -548,11 +575,14 @@ function update() {
         shootSound.play();
       }
     } else {
-      // Restart the game
-      this.scene.restart();
+      if (allowRestart) {
+        // Restart the game
+        allowRestart = false;
+        this.scene.restart();
+      }
     }
   }
 
   // Move the texture of the tile sprite upwards
-  bg.tilePositionY -= 2.5;
+  bg.tilePositionY -= 1.1;
 }
