@@ -1,5 +1,9 @@
 import Phaser from "phaser";
 
+// Classes
+
+import HealthBar from "./js/classes/healthbar.js";
+
 // Images
 import playerImg from "./assets/player.png";
 import bulletImg from "./assets/bullet.png";
@@ -158,6 +162,7 @@ function create() {
       this.setPosition(x, y);
       this.setActive(true);
       this.setVisible(true);
+      //this.setCollideWorldBounds(true); TOOD: implement
     }
 
     startShooting() {
@@ -203,9 +208,16 @@ function create() {
           target = this.x;
         }
 
+        let targets;
+        if (this.healthBar) {
+          targets = [this, this.healthBar.bar];
+        } else {
+          targets = [this];
+        }
+
         // Create a tween that changes the x position of the alien
         this.scene.tweens.add({
-          targets: this,
+          targets: targets,
           x: target,
           duration: this.movementSpeed, // random duration between 500ms and 1500ms
           ease: "Linear", // use linear easing
@@ -232,9 +244,11 @@ function create() {
   class BossAlien extends Alien {
     constructor(scene) {
       super(scene, "bossAlien", 1800, 400, true);
-      this.setLife(20); // Extra life
+      this.life = 20;
+      this.healthBar = new HealthBar(this.scene, this.x, this.y, this.life);
     }
 
+    // Set the starting position of the boss alien
     setup(x, y) {
       this.setPosition(x, -100);
       this.spawning = true;
@@ -258,6 +272,7 @@ function create() {
     }
 
     setLife(value) {
+      this.healthBar.decrease(this.life - value);
       this.life = value;
     }
 
