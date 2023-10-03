@@ -1,7 +1,4 @@
-import Phaser from "phaser";
-
 // Classes
-
 import HealthBar from "./js/classes/healthbar.js";
 import Player from "./js/classes/player.js";
 
