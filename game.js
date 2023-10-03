@@ -240,7 +240,12 @@ function create() {
     constructor(scene) {
       super(scene, "bossAlien", 1800, 400, true);
       this.life = 20;
-      this.healthBar = new HealthBar(this.scene, this.x, this.y, this.life);
+      this.healthBar = new HealthBar(
+        this.scene,
+        this.x - 41,
+        this.y + 40,
+        this.life
+      );
     }
 
     // Set the starting position of the boss alien
