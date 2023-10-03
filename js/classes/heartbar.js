@@ -6,7 +6,7 @@ class HealthBar {
     this.y = y;
     this.maxLife = maxLife;
     this.currentHealth = maxLife;
-    this.percent = 1;
+    this.p = 1;
 
     this.width = width || 80;
     this.height = height || 14;
@@ -23,7 +23,7 @@ class HealthBar {
       this.currentHealth = 0;
     }
 
-    this.percent = this.currentHealth / this.maxLife;
+    this.p = this.currentHealth / this.maxLife;
     this.draw();
   }
 
@@ -34,15 +34,14 @@ class HealthBar {
     this.bar.fillStyle(0xffffff);
     this.bar.fillRect(this.x + 2, this.y + 2, this.width, this.height);
 
-    if (this.percent < 0.3) {
+    if (this.p < 0.3) {
       this.bar.fillStyle(0xff0000);
     } else {
       this.bar.fillStyle(0x00ff00);
     }
 
     // Actual health bar
-    var d = Math.floor(this.percent * this.width);
-
+    var d = Math.floor(this.p * this.width);
     this.bar.fillRect(this.x + 2, this.y + 2, d, this.height);
   }
 }

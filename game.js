@@ -3,9 +3,11 @@ import Phaser from "phaser";
 // Classes
 
 import HealthBar from "./js/classes/healthbar.js";
+import Player from "./js/classes/player.js";
 
 // Images
 import playerImg from "./assets/player.png";
+import heartImg from "./assets/heart.png";
 import bulletImg from "./assets/bullet.png";
 import playerBulletImg from "./assets/player-bullet.png";
 import bossAlienBulletImg from "./assets/boss-alien-bullet.png";
@@ -50,6 +52,7 @@ let params = new URLSearchParams(window.location.search);
 let gameSettings = {
   playerSpeed: 330,
   playerWeapon: "bullets",
+  playerHealth: 3,
   regularAliens: params.get("regularAliens") ? params.get("regularAliens") : 11,
 };
 
@@ -69,6 +72,7 @@ let allowRestart = false;
 
 function preload() {
   this.load.image("player", playerImg);
+  this.load.image("heart", heartImg);
   this.load.image("bullet", bulletImg);
   this.load.image("playerBullet", playerBulletImg);
   this.load.image("alien", alienImg);
@@ -99,23 +103,14 @@ function create() {
   bg = this.add.tileSprite(0, 0, 1500, 900, "space");
   bg.setOrigin(0, 0);
 
-  /*
-   * PLAYER
-   */
-  player = this.physics.add.sprite(
+  player = new Player(
+    this,
     config.width / 2,
     config.height - 150,
-    "player"
+    gameSettings.playerSpeed,
+    gameSettings.playerWeapon,
+    gameSettings.playerHealth
   );
-  player.setSpeed = (speed) => {
-    player.speed = speed;
-  };
-  player.setWeapons = (weapon) => {
-    player.weapon = weapon;
-  };
-  player.speed = gameSettings.playerSpeed;
-  player.weapon = gameSettings.playerWeapon;
-  player.setCollideWorldBounds(true); // keeps the player within the game world
 
   /*
    * MISC SPRITES
@@ -237,7 +232,7 @@ function create() {
 
   class RegularAlien extends Alien {
     constructor(scene) {
-      super(scene, "alien", 3900, 1000);
+      super(scene, "alien", 4300, 1200);
     }
   }
 
@@ -252,18 +247,16 @@ function create() {
     setup(x, y) {
       this.setPosition(x, -100);
       this.spawning = true;
-      // Create a tween that changes the x position of the boss alien
+      // move the bossalien into position
       this.scene.tweens.add({
         targets: this,
         y: y,
         duration: 1300,
         ease: "Linear", // use linear easing
         onComplete: () => {
-          if (this.active) {
-            this.startMoving();
-            this.startShooting();
-            this.spawning = false;
-          }
+          this.startMoving();
+          this.startShooting();
+          this.spawning = false;
         },
       });
 
@@ -292,8 +285,8 @@ function create() {
         let angle = Phaser.Math.Angle.Between(
           this.x,
           this.y,
-          player.x,
-          player.y
+          player.sprite.x,
+          player.sprite.y
         );
 
         // Determine the speed of movement
@@ -422,7 +415,7 @@ function create() {
           aliensAlive = true;
         }
       });
-      if (aliensAlive === false && player.active) {
+      if (aliensAlive === false && player.sprite.active) {
         let bossAlienGroup = this.physics.add.group({ classType: BossAlien });
         bossAlien = bossAlienGroup.get();
         bossAlien.setup(config.width / 2, 170);
@@ -439,8 +432,9 @@ function create() {
             if (bossAlien.spawning) return;
             bossAlien.setLife(bossAlien.life - 1);
 
-            if (bossAlien.life === 0 && player.active) {
+            if (bossAlien.life === 0 && player.sprite.active) {
               bossAlien.destroy();
+              bossAlien.healthBar.bar.destroy();
               this.physics.add
                 .sprite(bossAlien.x, bossAlien.y, "bossAlienExplode")
                 .play("bossAlienExplode");
@@ -477,13 +471,22 @@ function create() {
 
   // When the player is hit by an alien bullet
   this.physics.add.overlap(
-    player,
+    player.sprite,
     alienBullets,
-    function (player, alienBullet) {
+    function (playerSprite, alienBullet) {
+      playerSprite.player.decreaseLife(1);
       alienBullet.destroy();
-      let explosion = this.physics.add.sprite(player.x, player.y, "explosion");
-      explosion.play("explode");
       playerDeadSound.play();
+
+      if (player.health > 0) return;
+
+      alienBullet.destroy();
+      let explosion = this.physics.add.sprite(
+        playerSprite.x,
+        playerSprite.y,
+        "explosion"
+      );
+      explosion.play("explode");
       player.destroy();
 
       let youLoseText = this.add
@@ -528,16 +531,16 @@ function create() {
 
   // When the player picks up an upgrade
   this.physics.add.overlap(
-    player,
+    player.sprite,
     upgrades,
-    function (player, upgrade) {
-      upgrade.enable(player);
+    function (playerSprite, upgrade) {
+      upgrade.enable(playerSprite.player);
       upgrade.destroy();
 
       this.time.delayedCall(
         3500,
         function () {
-          upgrade.expire(player);
+          upgrade.expire(playerSprite.player);
         },
         [],
         this
@@ -549,7 +552,8 @@ function create() {
 }
 
 function update() {
-  if (player.active) {
+  // Move using the arrow keys
+  if (player.sprite.active) {
     if (cursors.left.isDown) {
       player.setVelocityX(-player.speed);
     } else if (cursors.right.isDown) {
@@ -564,26 +568,27 @@ function update() {
     }
   }
 
+  // Shoot using the space bar
   if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-    if (player.active) {
+    if (player.sprite.active) {
       if (player.weapon === "bullets") {
         let playerBullet = playerBullets.create(
-          player.x,
-          player.y - player.height + 40,
+          player.sprite.x,
+          player.sprite.y - player.sprite.height + 40,
           "playerBullet"
         );
         playerBullet.setVelocityY(-player.speed);
         shootSound.play();
       } else if (player.weapon === "double-bullets") {
         let playerBullet1 = playerBullets.create(
-          player.x - 20,
-          player.y - player.height + 40,
+          player.sprite.x - 20,
+          player.sprite.y - player.sprite.height + 40,
           "playerBullet"
         );
         playerBullet1.setVelocityY(-player.speed);
         let playerBullet2 = playerBullets.create(
-          player.x + 20,
-          player.y - player.height + 40,
+          player.sprite.x + 20,
+          player.sprite.y - player.sprite.height + 40,
           "playerBullet"
         );
         playerBullet2.setVelocityY(-player.speed);
