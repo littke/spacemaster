@@ -42,7 +42,7 @@ class Player {
     this.sprite.scene.tweens.add({
       targets: this.sprite,
       alpha: { from: 1, to: 0 },
-      duration: 100,
+      duration: 150,
       repeat: 3,
       ease: "Linear",
       yoyo: true,
