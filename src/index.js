@@ -445,7 +445,7 @@ function create() {
               // Show "You win" text
               let text = this.add
                 .text(0, 0, "You win!", {
-                  font: '64px "Arial Black"',
+                  font: '64px "Arial Black", "Arial Bold", "Arial", sans-serif',
                   fill: "#fff",
                 })
                 .setOrigin(0.5, 0.5)
@@ -493,7 +493,7 @@ function create() {
 
       let youLoseText = this.add
         .text(0, 0, "You lose", {
-          font: '64px "Arial Black"',
+          font: '64px "Arial Black", "Arial Bold", "Arial", sans-serif',
           fill: "#fff",
         })
         .setOrigin(0.5, 0.5)
@@ -502,7 +502,7 @@ function create() {
 
       let spaceToRestartText = this.add
         .text(0, 0, "Hit <Space> to restart", {
-          font: '34px "Arial Black"',
+          font: '34px "Arial Black", "Arial Bold", "Arial", sans-serif',
           fill: "#fff",
         })
         .setOrigin(0.5, 0.5)
