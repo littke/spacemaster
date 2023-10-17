@@ -1,3 +1,5 @@
+import Phaser from "phaser";
+
 // Classes
 import HealthBar from "./js/classes/healthbar.js";
 import Player from "./js/classes/player.js";
@@ -445,7 +447,9 @@ function create() {
               // Show "You win" text
               let text = this.add
                 .text(0, 0, "You win!", {
-                  font: '64px "Arial Black", "Arial Bold", "Arial", sans-serif',
+                  fontFamily:
+                    '"Arial Black", "Arial Bold", "Arial", sans-serif',
+                  fontSize: "64px",
                   fill: "#fff",
                 })
                 .setOrigin(0.5, 0.5)
@@ -483,17 +487,12 @@ function create() {
       if (player.health > 0) return;
 
       alienBullet.destroy();
-      let explosion = this.physics.add.sprite(
-        playerSprite.x,
-        playerSprite.y,
-        "explosion"
-      );
-      explosion.play("explode");
       player.destroy();
 
       let youLoseText = this.add
         .text(0, 0, "You lose", {
-          font: '64px "Arial Black", "Arial Bold", "Arial", sans-serif',
+          fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
+          fontSize: "64px",
           fill: "#fff",
         })
         .setOrigin(0.5, 0.5)
@@ -502,7 +501,8 @@ function create() {
 
       let spaceToRestartText = this.add
         .text(0, 0, "Hit <Space> to restart", {
-          font: '34px "Arial Black", "Arial Bold", "Arial", sans-serif',
+          fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
+          fontSize: "34px",
           fill: "#fff",
         })
         .setOrigin(0.5, 0.5)
