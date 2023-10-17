@@ -4,6 +4,7 @@ class Hearts {
     this.y = y;
     this.maxLives = maxLives;
     this.currentLives = maxLives;
+    this.scene = scene;
 
     this.hearts = scene.add.group({
       key: "heart",
@@ -20,9 +21,18 @@ class Hearts {
       this.currentLives = 0;
     }
 
-    // Redraw hearts
     this.hearts.getChildren().forEach((heart, index) => {
-      heart.setVisible(index < this.currentLives);
+      if (index < this.currentLives) {
+        heart.setAlpha(1);
+      } else {
+        // Fade out
+        this.scene.tweens.add({
+          targets: heart,
+          alpha: 0,
+          duration: 300, // Perform fade over half a second
+          ease: "Linear",
+        });
+      }
     });
   }
 }
