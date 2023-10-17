@@ -31,8 +31,13 @@ class Player {
   };
 
   decreaseLife(amount) {
-    this.health -= amount;
-    this.hearts.decrease(amount);
+    // When we're decreasing life, temporary blink and make the player indestructible
+    // for a short period of time. This is to avoid the player being hit multiple times.
+    if (!this.indestructible) {
+      this.health -= amount;
+      this.hearts.decrease(amount);
+    }
+    this.indestructible = true;
 
     this.sprite.scene.tweens.add({
       targets: this.sprite,
@@ -41,6 +46,9 @@ class Player {
       repeat: 3,
       ease: "Linear",
       yoyo: true,
+      onComplete: () => {
+        this.indestructible = false;
+      },
     });
   }
 
