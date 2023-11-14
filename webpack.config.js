@@ -24,6 +24,13 @@ module.exports = {
         test: /\.(png|svg|jpg|jpeg|gif|wav)$/i,
         type: "asset/resource",
       },
+      {
+        test: /CNAME$/,
+        type: "asset/resource",
+        generator: {
+          filename: "CNAME",
+        },
+      },
     ],
   },
 };
