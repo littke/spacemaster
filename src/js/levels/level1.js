@@ -21,6 +21,7 @@ class Level1 extends Phaser.Scene {
   create() {
     this.player = this.registry.get("player");
     this.playerBullets = this.registry.get("playerBullets");
+    this.alienBullets = this.registry.get("alienBullets");
     this.config = this.sys.game.config;
 
     /*
@@ -41,8 +42,6 @@ class Level1 extends Phaser.Scene {
         this.level1Music.play();
       }
     }
-
-    this.alienBullets = this.physics.add.group();
 
     // Define the aliens
     // TODO: Move to it's own class
@@ -95,62 +94,6 @@ class Level1 extends Phaser.Scene {
         if (this.aliensAlive === false && this.player.sprite.active) {
           this.scene.start("Level2");
         }
-      },
-      null,
-      this
-    );
-
-    // When the player is hit by an alien bullet
-    this.physics.add.overlap(
-      this.player.sprite,
-      this.alienBullets,
-      function (playerSprite, alienBullet) {
-        this.player.decreaseLife(1);
-        alienBullet.destroy();
-        this.sound.play("impactScreamSound");
-
-        if (this.player.health > 0) return;
-
-        alienBullet.destroy();
-        this.player.destroy();
-
-        let youLoseText = this.add
-          .text(0, 0, "You lose", {
-            fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
-            fontSize: "64px",
-            fill: "#fff",
-          })
-          .setOrigin(0.5, 0.5)
-          .setPosition(this.config.width / 2, this.config.height / 2)
-          .setVisible(false);
-
-        let spaceToRestartText = this.add
-          .text(0, 0, "Hit <Space> to restart", {
-            fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
-            fontSize: "34px",
-            fill: "#fff",
-          })
-          .setOrigin(0.5, 0.5)
-          .setPosition(this.config.width / 2, this.config.height / 2 + 100)
-          .setVisible(false);
-
-        this.time.delayedCall(
-          600,
-          function () {
-            youLoseText.setVisible(true);
-          },
-          [],
-          this
-        );
-        this.time.delayedCall(
-          2100,
-          function () {
-            spaceToRestartText.setVisible(true);
-            allowRestart = true;
-          },
-          [],
-          this
-        );
       },
       null,
       this

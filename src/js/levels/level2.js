@@ -26,7 +26,9 @@ class Level2 extends Phaser.Scene {
       frameHeight: 420,
       endFrame: 10,
     });
+  }
 
+  create() {
     this.anims.create({
       key: "bossAlienExplode",
       frames: this.anims.generateFrameNumbers("boss-alien-explosion", {
@@ -38,13 +40,11 @@ class Level2 extends Phaser.Scene {
       repeat: 0,
       hideOnComplete: true,
     });
-  }
 
-  create() {
     this.player = this.registry.get("player");
     this.playerBullets = this.registry.get("playerBullets");
+    this.alienBullets = this.registry.get("alienBullets");
     this.config = this.sys.game.config;
-    this.alienBullets = this.physics.add.group();
 
     class BossAlien extends Alien {
       constructor(scene, alienBullets) {
@@ -79,6 +79,11 @@ class Level2 extends Phaser.Scene {
         this.setVisible(true);
       }
 
+      kill() {
+        this.healthBar.bar.destroy();
+        this.destroy();
+      }
+
       setLife(value) {
         this.healthBar.decrease(this.life - value);
         this.life = value;
@@ -98,8 +103,8 @@ class Level2 extends Phaser.Scene {
           let angle = Phaser.Math.Angle.Between(
             this.x,
             this.y,
-            this.player.sprite.x,
-            this.player.sprite.y
+            this.scene.player.sprite.x,
+            this.scene.player.sprite.y
           );
 
           // Determine the speed of movement
@@ -132,19 +137,17 @@ class Level2 extends Phaser.Scene {
 
     // If the player hits the boss alien
     this.physics.add.overlap(
-      this.bossAlien,
       this.playerBullets,
-      function (bossAlien, playerBullet) {
-        // Don't allow shooting the boss while it's spawning
-
+      this.bossAlienGroup,
+      function (playerBullet, bossAlien) {
         playerBullet.destroy();
 
-        if (this.bossAlien.spawning) return;
-        this.bossAlien.setLife(bossAlien.life - 1);
+        // Don't allow shooting the boss while it's spawning
+        if (bossAlien.spawning) return;
+        bossAlien.setLife(bossAlien.life - 1);
 
         if (this.bossAlien.life === 0 && this.player.sprite.active) {
-          this.bossAlien.destroy();
-          this.bossAlien.healthBar.bar.destroy();
+          bossAlien.kill();
           this.physics.add
             .sprite(this.bossAlien.x, this.bossAlien.y, "bossAlienExplode")
             .play("bossAlienExplode");
