@@ -40,12 +40,11 @@ class UIScene extends Phaser.Scene {
     let text = this.add
       .text(0, 0, "Loading...", {
         fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
-        fontSize: "64px",
+        fontSize: "34px",
         fill: "#fff",
       })
       .setOrigin(0.5, 0.5)
-      .setPosition(this.config.width / 2, this.config.height / 2)
-      .setVisible(false);
+      .setPosition(this.config.width / 2, this.config.height / 2);
 
     this.load.image("player", playerImg);
     this.load.image("heart", heartImg);
@@ -145,13 +144,15 @@ class UIScene extends Phaser.Scene {
       this.player.sprite,
       this.alienBullets,
       function (playerSprite, alienBullet) {
+        // Can't hit a player who was just hit
+        if (this.player.indestructible) return;
+
         this.player.decreaseLife(1);
         alienBullet.destroy();
         this.sound.play("impactScreamSound");
 
         if (this.player.health > 0) return;
 
-        alienBullet.destroy();
         this.player.destroy();
 
         let youLoseText = this.add
@@ -186,7 +187,7 @@ class UIScene extends Phaser.Scene {
           2100,
           function () {
             spaceToRestartText.setVisible(true);
-            allowRestart = true;
+            this.allowRestart = true;
           },
           [],
           this
@@ -196,7 +197,8 @@ class UIScene extends Phaser.Scene {
       this
     );
 
-    this.scene.launch("Level2");
+    // Launch
+    this.scene.launch("Level1");
   }
 
   update() {

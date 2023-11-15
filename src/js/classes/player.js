@@ -11,6 +11,8 @@ class Player {
     this.sprite.setCollideWorldBounds(true); // keeps the player within the game world
     this.sprite.player = this;
 
+    this.indestructible = false;
+
     this.hearts = new Hearts(scene, 30, 830, this.health);
   }
 

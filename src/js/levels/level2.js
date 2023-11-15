@@ -81,6 +81,10 @@ class Level2 extends Phaser.Scene {
 
       kill() {
         this.healthBar.bar.destroy();
+        this.scene.physics.add
+          .sprite(this.x, this.y, "bossAlienExplode")
+          .play("bossAlienExplode");
+        this.scene.sound.play("explosionSound");
         this.destroy();
       }
 
@@ -148,10 +152,6 @@ class Level2 extends Phaser.Scene {
 
         if (this.bossAlien.life === 0 && this.player.sprite.active) {
           bossAlien.kill();
-          this.physics.add
-            .sprite(this.bossAlien.x, this.bossAlien.y, "bossAlienExplode")
-            .play("bossAlienExplode");
-          this.sound.play("explosionSound");
 
           // Show "You win" text
           let text = this.add
