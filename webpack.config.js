@@ -33,4 +33,9 @@ module.exports = {
       },
     ],
   },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src/"), // map '@' to the absolute path of your 'src' directory
+    },
+  },
 };
