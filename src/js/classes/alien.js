@@ -26,8 +26,24 @@ class Alien extends Phaser.Physics.Arcade.Sprite {
 
     this.upgrades = this.scene.registry.get("upgrades");
     this.gameSettings = this.scene.registry.get("gameSettings");
+  }
 
-    this.dropUpgrade = {
+  kill() {
+    if (this.nextShootEvent) this.nextShootEvent.remove();
+    this.scene.sound.play("explosionSound");
+    this.destroy();
+    this.dropUpgrade(80);
+  }
+
+  setup(x, y) {
+    this.setPosition(x, y);
+    this.setActive(true);
+    this.setVisible(true);
+    //this.setCollideWorldBounds(true); TOOD: implement
+  }
+
+  dropUpgrade(probability) {
+    this.upgradeTypes = {
       x2: () => {
         let upgrade = this.upgrades.create(this.x, this.y, "x2Upgrade");
         upgrade.enable = (player) => {
@@ -41,13 +57,12 @@ class Alien extends Phaser.Physics.Arcade.Sprite {
         upgrade.setVelocityY(200);
       },
     };
-  }
 
-  setup(x, y) {
-    this.setPosition(x, y);
-    this.setActive(true);
-    this.setVisible(true);
-    //this.setCollideWorldBounds(true); TOOD: implement
+    // Drop an upgrade
+    let dropUpgradeChance = Phaser.Math.Between(0, 100);
+    if (dropUpgradeChance > probability) {
+      this.upgradeTypes.x2();
+    }
   }
 
   startShooting() {

@@ -67,6 +67,7 @@ class UIScene extends Phaser.Scene {
   }
 
   create() {
+    this.sound.volume = 0.4;
     this.bg = this.add.tileSprite(0, 0, 1500, 900, "space");
     this.bg.setOrigin(0, 0);
 
@@ -87,8 +88,12 @@ class UIScene extends Phaser.Scene {
 
     this.playerBullets = this.physics.add.group();
     this.registry.set("playerBullets", this.playerBullets);
+
     this.alienBullets = this.physics.add.group();
     this.registry.set("alienBullets", this.alienBullets);
+
+    this.aliens = this.physics.add.group();
+    this.registry.set("aliens", this.aliens);
 
     /*
      * UPGRADES
@@ -197,8 +202,8 @@ class UIScene extends Phaser.Scene {
       this
     );
 
-    // Launch
-    this.scene.launch("Level1");
+    //  Launch
+    this.scene.launch("Level3");
   }
 
   update() {

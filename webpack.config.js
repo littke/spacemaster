@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CnameWebpackPlugin = require("cname-webpack-plugin");
 
 module.exports = {
   mode: "development",
@@ -17,19 +18,15 @@ module.exports = {
       title: "Development",
       template: "./src/index.html",
     }),
+    new CnameWebpackPlugin({
+      domain: "spacemaster.one",
+    }),
   ],
   module: {
     rules: [
       {
         test: /\.(png|svg|jpg|jpeg|gif|wav)$/i,
         type: "asset/resource",
-      },
-      {
-        test: /CNAME$/,
-        type: "asset/resource",
-        generator: {
-          filename: "CNAME",
-        },
       },
     ],
   },
