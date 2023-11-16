@@ -203,7 +203,7 @@ class UIScene extends Phaser.Scene {
     );
 
     //  Launch
-    this.scene.launch("Level3");
+    this.scene.launch("Level1");
   }
 
   update() {
