@@ -9,7 +9,7 @@ class Hearts {
     this.hearts = scene.add.group({
       key: "heart",
       repeat: this.maxLives - 1,
-      setXY: { x: this.x, y: this.y, stepX: 32 },
+      setXY: { x: this.x, y: this.y, stepX: 46 },
     });
   }
 
