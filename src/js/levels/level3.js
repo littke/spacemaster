@@ -11,7 +11,7 @@ class Level3 extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("coolAlien", coolAlienImg);
+    CoolAlien.preload(this);
   }
 
   create() {

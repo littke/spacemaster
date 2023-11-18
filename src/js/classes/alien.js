@@ -8,7 +8,8 @@ class Alien extends Phaser.Physics.Arcade.Sprite {
     shootDelay,
     movementSpeed,
     spawning,
-    alienBullets
+    alienBullets,
+    bulletType
   ) {
     super(scene, 0, 0, texture);
     this.scene = scene;
@@ -16,6 +17,8 @@ class Alien extends Phaser.Physics.Arcade.Sprite {
     this.movementSpeed = movementSpeed;
     this.alienBullets = alienBullets;
     this.spawning = spawning;
+    this.bulletType = bulletType || "bullet";
+
     // Add this to the physics system
     this.scene.physics.world.enable(this);
     // Initialize shooting and moving
@@ -70,7 +73,7 @@ class Alien extends Phaser.Physics.Arcade.Sprite {
       let bullet = this.alienBullets.create(
         this.x,
         this.y + this.height / 2,
-        "bullet"
+        "coolAlienBullet"
       );
       bullet.setVelocityY(300);
 

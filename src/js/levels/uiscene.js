@@ -223,7 +223,9 @@ class UIScene extends Phaser.Scene {
       }
     }
 
-    // Shoot using the space bar
+    this.player.registerShooting(this.cursors, this.playerBullets);
+
+    // Allow game restart if you're dead
     if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
       if (this.player.sprite.active) {
         if (this.player.weapon === "bullets") {
