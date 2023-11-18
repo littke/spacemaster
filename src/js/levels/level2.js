@@ -28,7 +28,7 @@ class Level2 extends Phaser.Scene {
       "bossAlienDied",
       () => {
         if (this.player.sprite.active) {
-          this.time.delayedCall(1000, () => {
+          this.time.delayedCall(2500, () => {
             this.scene.launch("Level3");
           });
         }

@@ -203,7 +203,7 @@ class UIScene extends Phaser.Scene {
     );
 
     //  Launch
-    this.scene.launch("Level1");
+    this.scene.launch("Level3");
   }
 
   update() {
@@ -228,30 +228,6 @@ class UIScene extends Phaser.Scene {
     // Allow game restart if you're dead
     if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
       if (this.player.sprite.active) {
-        if (this.player.weapon === "bullets") {
-          this.playerBullet = this.playerBullets.create(
-            this.player.sprite.x,
-            this.player.sprite.y - this.player.sprite.height + 40,
-            "playerBullet"
-          );
-          this.playerBullet.setVelocityY(-this.player.speed);
-          this.sound.play("shootSound");
-        } else if (this.player.weapon === "double-bullets") {
-          this.playerBullet1 = this.playerBullets.create(
-            this.player.sprite.x - 20,
-            this.player.sprite.y - this.player.sprite.height + 40,
-            "playerBullet"
-          );
-          this.playerBullet1.setVelocityY(-this.player.speed);
-          this.playerBullet2 = this.playerBullets.create(
-            this.player.sprite.x + 20,
-            this.player.sprite.y - this.player.sprite.height + 40,
-            "playerBullet"
-          );
-          this.playerBullet2.setVelocityY(-this.player.speed);
-          this.sound.play("shootSound");
-        }
-      } else {
         if (this.allowRestart) {
           // Restart the game
           this.allowRestart = false;

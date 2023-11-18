@@ -13,6 +13,8 @@ class Player {
 
     this.indestructible = false;
 
+    this.lastShootTime = 0;
+
     this.hearts = new Hearts(scene, 30, 830, this.health);
   }
 
@@ -30,6 +32,44 @@ class Player {
 
   setVelocityY = (velocity) => {
     this.sprite.setVelocityY(velocity);
+  };
+
+  registerShooting = (cursors, playerBullets) => {
+    let currentTime = Date.now();
+
+    // Shoot using the space bar
+    if (
+      Phaser.Input.Keyboard.JustDown(cursors.space) &&
+      currentTime - this.lastShootTime > 300
+    ) {
+      this.lastShootTime = currentTime;
+
+      if (this.sprite.active) {
+        if (this.weapon === "bullets") {
+          let playerBullet = playerBullets.create(
+            this.sprite.x,
+            this.sprite.y - this.sprite.height + 40,
+            "playerBullet"
+          );
+          playerBullet.setVelocityY(-this.speed);
+          this.scene.sound.play("shootSound");
+        } else if (this.weapon === "double-bullets") {
+          let playerBullet1 = playerBullets.create(
+            this.sprite.x - 20,
+            this.sprite.y - this.sprite.height + 40,
+            "playerBullet"
+          );
+          playerBullet1.setVelocityY(-this.speed);
+          let playerBullet2 = playerBullets.create(
+            this.sprite.x + 20,
+            this.sprite.y - this.sprite.height + 40,
+            "playerBullet"
+          );
+          playerBullet2.setVelocityY(-this.speed);
+          this.scene.sound.play("shootSound");
+        }
+      }
+    }
   };
 
   decreaseLife(amount) {
