@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 
 import RegularAlien from "@/js/classes/regularAlien.js";
-import regularAlienImg from "@/assets/regular-alien.png";
 
 // Music
 import music1File from "@/assets/music/172_drum_n_bass_regal_heavy_electronic_drums.wav";
@@ -15,7 +14,7 @@ class Level1 extends Phaser.Scene {
 
   preload() {
     this.load.audio("level1Music", music1File);
-    this.load.image("regularAlien", regularAlienImg);
+    RegularAlien.preload(this);
   }
 
   create() {

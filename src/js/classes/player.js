@@ -40,7 +40,7 @@ class Player {
     // Shoot using the space bar
     if (
       Phaser.Input.Keyboard.JustDown(cursors.space) &&
-      currentTime - this.lastShootTime > 300
+      currentTime - this.lastShootTime > 150
     ) {
       this.lastShootTime = currentTime;
 
