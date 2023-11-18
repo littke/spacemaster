@@ -15,7 +15,7 @@ class Player {
 
     this.lastShootTime = 0;
 
-    this.hearts = new Hearts(scene, 30, 830, this.health);
+    this.hearts = new Hearts(scene, 34, 818, this.health);
   }
 
   setSpeed = (speed) => {
@@ -84,7 +84,7 @@ class Player {
     this.sprite.scene.tweens.add({
       targets: this.sprite,
       alpha: { from: 1, to: 0 },
-      duration: 150,
+      duration: 300,
       repeat: 3,
       ease: "Linear",
       yoyo: true,

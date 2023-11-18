@@ -41,14 +41,7 @@ class Level3 extends Phaser.Scene {
 
         if (this.coolAliens.countActive() === 0 && this.player.sprite.active) {
           this.time.delayedCall(1000, () => {
-            let text = this.add
-              .text(0, 0, "You win!", {
-                fontFamily: '"Arial Black", "Arial Bold", "Arial", sans-serif',
-                fontSize: "64px",
-                fill: "#fff",
-              })
-              .setOrigin(0.5, 0.5)
-              .setPosition(this.config.width / 2, this.config.height / 2);
+            this.scene.launch("Level4");
           });
         }
       },
